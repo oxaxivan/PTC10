@@ -1,9 +1,9 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "PTC10.h"
 
 PTC10::PTC10()
 {
-	TTY::TTY();
+        //TTY::TTY();
 	nchannels_used = 4;
 	nchannels = MAX_CHANNELS;
 	for(int q = 0; q < MAX_T_USED; q++)
