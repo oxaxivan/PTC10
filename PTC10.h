@@ -1,16 +1,17 @@
 //#pragma once
 #include <QString>
 
-#define MAX_CHANNELS	30
+//#define MAX_CHANNELS	30
 #define MAX_T_USED		8
+#define MAX_ERRORS    20
 
-#define LOPASS_OFF 0
-#define LOPASS_1s 1
-#define LOPASS_3s 2
-#define LOPASS_10s 3
-#define LOPASS_30s 4
-#define LOPASS_100s 5
-#define LOPASS_300s 6
+#define LOPASS_OFF "Off  \n"
+#define LOPASS_1s "1 s  \n"
+#define LOPASS_3s "3 s  \n"
+#define LOPASS_10s "10 s \n"
+#define LOPASS_30s "30 s \n"
+#define LOPASS_100s "100 s\n"
+#define LOPASS_300s "300 s\n"
 
 #define SENSOR_CURR_1m 1
 #define SENSOR_CURR_100u 2
@@ -35,7 +36,7 @@ class PTC10
 {
 public:
         PTC10::PTC10();   //конструктор-деструктор
-        int GetValue(QString name, float * buffer);
+        int GetValue(QString name, QString * buffer);
         int SetValue(Qstring name, float value);
 
         int GetChannelsNames(QString * names[MAX_CHANNELS]);
@@ -43,8 +44,7 @@ public:
 
         //int GetValues(Ar1<double> *);		//array of values with indici channels_used is returned // wtf??
 
-	int channels_used[MAX_T_USED]; //?
-        int nchannels;
+        int nchannels_used;
 
         int GetDeviceID(Qstring * buffer);
 
@@ -59,9 +59,9 @@ public:
 
         int GetTime(); //int?
 
-        QString GetError();
+        int GetErrors(QString[MAX_ERRORS] * list);
         int AbortAll();         //kill.all - aborts all running macros
-        int PrintOnScreen(QString value);
+        int PrintOnScreen(QString message);
 
         int Derivative(QString name); //Instead of Power, Temperature, etc. I/O sends its derivative
         int Value(QString name); //vice versa
@@ -69,13 +69,16 @@ public:
         int Dither(QString name); // PTC430 DC
         int NotDither(QString name);
 
-        int Lopass(QString name, int mode);            //sets RC-filter time
+        int Lopass(QString name, char[6] mode);            //sets RC-filter time for inputs
+        int IncreaseLopass(QString name);
+        int DecreaseLopass(QString name);
+
         int LowLimit(QString name, float value);
         int HighLimit(QString name, float value);
 
-        int GetAverage(QString name, int points);   //Prints Average on Screen
-        int GetStdDeviation(QString name, int points);  //Prints Std Deviation on Screen
-        int Stats(QString name, int numberofpoints); //Prints all statistic data on Screen
+        int GetAverage(QString name, int points);   //Prints Average on Screen??
+        int GetStdDeviation(QString name, int points);  //Prints Std Deviation on Screen??
+        int Stats(QString name); //Starts Gathering Stats
         int NoStats(QString name);
 
         int PIDSetRamp(QString name, float value);

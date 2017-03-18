@@ -3,58 +3,49 @@
 
 PTC10::PTC10()
 {
-        //TTY::TTY();
-	nchannels_used = 4;
-	nchannels = MAX_CHANNELS;
-	for(int q = 0; q < MAX_T_USED; q++)
-		channels_used[q] = q;
+        nchannels_used = 0;
 }
 
-int PTC10::GetValue(const char * name, char * buffer)
+int PTC10::GetValue(QString name, QString * buffer)
 {
-	if(m_Handle == 0)
-		return -1;
-	strcpy(buffer,name);
-	strcat(buffer,"?\n"); //добавить
-	int nread;
+        Qstring tmp = name;
+        tmp.append("? \n");
+        bool b;
+        int nread;
 	try
 	{
-		Write(buffer,(int)strlen(buffer)); 
+                Write(tmp,(int)strlen(tmp));
 	}
 	catch(...)
 	{
-		buffer[0] = 0;
+                buffer = 0;
 		return 1;
 	};
 	try
 	{
-		nread = Read(buffer, 256);
+                nread = Read(&tmp, 256);
 	}
 	catch(...)
 	{
-		buffer[0] = 0;
+                buffer = 0;
 		return 2;
 	}
 	if(nread == 0)
 		return 2;
-	if(buffer[nread-2] == '\n')
-		buffer[nread-2] = 0;  //'\0'!!!!
-	else
-		buffer[nread-1] = 0;
+        tmp.truncate(tmp.lastIndexOf("\n"));
+        *buffer = tmp;
 	return 0;
 }
 
-int PTC10::SetValue(const char * name, char * value)
+int PTC10::SetValue(QString name, float value)
 {
-	if(m_Handle == 0)
-		return -1;
-	char b0[256];
-	strcpy(b0,name); // strcat(b0,"=");?
-	strcat(b0,value);
-	strcat(b0,"\n");
+        QString tmp = name;
+        tmp.append(" = ");
+        tmp.append(QString::number(value));
+        tmp.append("\n");
 	try
 	{
-		Write(b0,(int)strlen(b0));
+                Write(tmp,(int)strlen(tmp));
 	}
 	catch(...)
 	{
@@ -63,63 +54,376 @@ int PTC10::SetValue(const char * name, char * value)
 	return 0;
 }
 
-int PTC10::GetDeviceID(char * buffer)
+int PTC10::GetDeviceID(QString * buffer)
 {
 	return GetValue("*IDN",buffer);
 }
 
-int PTC10::GetChannels(char * names[MAX_CHANNELS], int *nchan)
+int PTC10::GetChannelsNames(QString * names[MAX_CHANNELS])
 {
-	char b0[1000];
-	int nres = GetValue("getOutputNames",b0);
+        QString b0;
+        int nres = GetValue("getOutputNames",b0);
 	if(nres)
 		return nres;
-	int i = 0, p = 0, q = 0;
-        // q - index of b0
-        // p - index of names
-	while((i < MAX_CHANNELS)&&(b0[q]))
+        int i = 0, n = 0;
+        while((i < MAX_CHANNELS)&&)
 	{
-		if((b0[q] == ',')||(b0[q] == 0)) // (b0[q] == 0)?
-		{
-			names[i][p] = 0;
-			p = 0;
-			i++;
-			q++;
-		}
-		else
-			names[i][p++] = b0[q];
-		q++;
+            n = b0.indexOf("i");
+            names[i] = b0.left(n);
+            b0.remove(0,n);
+            i++;
 	}
-	*nchan = i;
-	nchannels = i;
+        nchannels_used = i;
 	return 0;
 }
 	
-int PTC10::GetValues(Ar1<double> * ar)
+int ChangeChannelName(Qstring name, QString newname)
 {
-	char b0[1000];
-	int nres = GetValue("getOutput",b0);
-	if(nres)
-		return nres;
-	double vals[MAX_CHANNELS];
-	char b1[100];
-	int i = 0, p = 0, q = 0;
-	while((i < MAX_CHANNELS)&&(b0[q]))
-	{
-		if((b0[q] == ',')||(b0[q] == 0))
-		{
-			b1[p] = 0;
-			vals[i] = strtod(b1,NULL);
-			p = 0;
-			i++;
-			q++;
-		}
-		else
-			b1[p++] = b0[q];
-		q++;
-	}
-	ar->setn(nchannels_used);
-	for(q = 0; q < nchannels_used; q++)              //?
-		(*ar)[q] = vals[channels_used[q]];       //?
-	return 0;
+        Qstring tmp = name;
+        tmp.append(".Name ");
+        tmp.append(newname);
+        tmp.append("\n")
+        try
+        {
+                Write(tmp,(int)strlen(tmp));
+        }
+        catch(...)
+        {
+            return 1;
+        }
+        return 0;
+}
+
+int DisableOutputs()
+{
+    QString tmp = "outputEnable = off \n"
+    try
+    {
+        Write(tmp, ...)
+    }
+}
+
+int EnableOutputs()
+{
+    QString tmp = "outputEnable = on \n"
+    try
+    {
+        Write(tmp, ...);
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int GetTime()
+{
+        QString tmp = "Systemtime.ms?\n";
+        int t;
+        bool ok;
+        try
+        {
+            Write(tmp, ...);
+        }
+        catch(...)
+        {
+            return -1;
+        }
+        try
+        {
+            t = Read(&tmp);
+        }
+        catch(...)
+        {
+            return -2;
+        }
+        if((tmp == 0)&&(t == 0)) return -2;
+        tmp.remove("\n");
+        t = tmp.toInt(&ok,10);
+        if(ok == false) return -2;
+        return t;
+}
+
+int GetErrors(QString[MAX_ERRORS] * list)
+{
+    QString t;
+    int i;
+    while (t != "no errors")
+    {
+        try
+        {
+            Write("geterror", ...);
+        }
+        catch(...)
+        {
+            return -1;
+        }
+        try
+        {
+            Read(&t, 256);
+        }
+        catch(...)
+        {
+            return -1;
+        }
+        *list[i] = t.remove("\n");
+        return 0;
+    }
+
+}
+
+int AbortAll()
+{
+    try
+    {
+        Write("kill.all",...);
+    }
+    catch
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PrintOnScreen(QString message)
+{
+    QString tmp = "print ";
+    tmp.append(message);
+    tmp.append("\n");
+    try
+    {
+        Write(tmp,...);
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int Derivative(QString name)
+{
+    QString tmp = name;
+    tmp.append(".d/dt = on \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int Value(QString name)
+{
+    QString tmp = name;
+    tmp.append(".d/dt = off \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int Dither(QString name)
+{
+    QString tmp = name;
+    tmp.append(".Dither = on \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int NotDither(QString name)
+{
+    QString tmp = name;
+    tmp.append(".Dither = off \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int Lopass(QString name, char[6] mode)
+{
+    QString tmp;
+    tmp.append(".Lopass = ");
+    tmp.append(mode);
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int IncreaseLopass(QString name)
+{
+    QString tmp = name;
+    tmp.append(".Lopass += 1 \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int DecreaseLopass(QString name)
+{
+    QString tmp = name;
+    tmp.append(".Lopass += -1 \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int LowLimit(QString name, float value)
+{
+    QString tmp = name;
+    tmp.append(".Low lmt =");
+    tmp.append(floattoQstring(value));
+    tmp.append("\n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int LowLimit(QString name, float value)
+{
+    QString tmp = name;
+    tmp.append(".Hi lmt =");
+    tmp.append(floattoQstring(value));
+    tmp.append("\n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int GetAverage(QString name, int points)
+{
+    if(Stats(name) == 1) return 3;
+    QString tmp = name;
+    tmp.append(".Points = ");
+    tmp.append(IntToQString(points));
+    tmp.append("\n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    tmp = name;
+    tmp.append(".Average \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 2;
+    }
+    return 0;
+}
+
+int GetStdDeviation(QString name, int points)
+{
+    if(Stats(name) == 1) return 3;
+    QString tmp = name;
+    tmp.append(".Points = ");
+    tmp.append(IntToQString(points));
+    tmp.append("\n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    tmp = name;
+    tmp.append(".SD \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 2;
+    }
+    return 0;
+}
+
+int Stats(QString name)
+{
+    QString tmp = name;
+    tmp.append(".Stats = on \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int Stats(QString name)
+{
+    QString tmp = name;
+    tmp.append(".Stats = off \n");
+    try
+    {
+        Write(tmp, ...)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
 }
