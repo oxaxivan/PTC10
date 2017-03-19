@@ -1,9 +1,50 @@
 //#include "stdafx.h"
 #include "PTC10.h"
 
-PTC10::PTC10()
+PTC10::PTC10(QString BaudRate, QString PortName)
 {
         nchannels_used = 0;
+        serial = new QSerialPort();
+        serial->setParity(QSerialPort::NoParity);
+        serial->setStopBits(QSerialPort::OneStop);
+        serial->setDataBits(QSerialPort::Data8);
+        serial->setPortName(PortName);
+
+        switch(BaudRate){
+        case "600":
+            serial->setBaudRate(600);
+            break;
+        case "1200":
+            serial->setBaudRate(1200);
+            break;
+        case "2400":
+            serial->setBaudRate(2400);
+            break;
+        case "4800":
+            serial->setBaudRate(4800);
+            break;
+        case "9600":
+            serial->setBaudRate(9600);
+            break;
+        case "19200":
+            serial->setBaudRate(19200);
+            break;
+        case "38400":
+            serial->setBaudRate(38400);
+            break;
+        case "57600":
+            serial->setBaudRate(57600);
+            break;
+        case "115200":
+            serial->setBaudRate(115200);
+            break;
+        default:
+            return 2;
+        }
+
+        connect(&serial, SIGNAL(response(QString)),this, SLOT(get_response(QString)));
+        if (!serial->open(QIODevice::ReadWrite))
+            return 1;
 }
 
 int PTC10::GetValue(QString name, QString * buffer)
@@ -14,7 +55,7 @@ int PTC10::GetValue(QString name, QString * buffer)
         int nread;
 	try
 	{
-                Write(tmp,(int)strlen(tmp));
+                serial->write(tmp.toLocal8Bit());
 	}
 	catch(...)
 	{
@@ -23,7 +64,9 @@ int PTC10::GetValue(QString name, QString * buffer)
 	};
 	try
 	{
-                nread = Read(&tmp, 256);
+            serial->waitForReadyRead(30)
+            QByteArray responseData = serial->readAll();
+            tmp = QString(responseData);
 	}
 	catch(...)
 	{
@@ -45,7 +88,7 @@ int PTC10::SetValue(QString name, float value)
         tmp.append("\n");
 	try
 	{
-                Write(tmp,(int)strlen(tmp));
+                serial->write(tmp.toLocal8Bit());
 	}
 	catch(...)
 	{
@@ -85,7 +128,7 @@ int ChangeChannelName(Qstring name, QString newname)
         tmp.append("\n")
         try
         {
-                Write(tmp,(int)strlen(tmp));
+                serial->write(tmp.toLocal8Bit());
         }
         catch(...)
         {
@@ -99,7 +142,7 @@ int DisableOutputs()
     QString tmp = "outputEnable = off \n"
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
 }
 
@@ -108,7 +151,7 @@ int EnableOutputs()
     QString tmp = "outputEnable = on \n"
     try
     {
-        Write(tmp, ...);
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -124,7 +167,7 @@ int GetTime()
         bool ok;
         try
         {
-            Write(tmp, ...);
+            serial->write(tmp.toLocal8Bit());
         }
         catch(...)
         {
@@ -132,7 +175,9 @@ int GetTime()
         }
         try
         {
-            t = Read(&tmp);
+            serial->waitForReadyRead(30)
+            QByteArray responseData = serial->readAll();
+            tmp = responseData.toInt
         }
         catch(...)
         {
@@ -153,7 +198,7 @@ int GetErrors(QString[MAX_ERRORS] * list)
     {
         try
         {
-            Write("geterror", ...);
+            serial->write("geterror".toLocal8Bit());
         }
         catch(...)
         {
@@ -161,7 +206,9 @@ int GetErrors(QString[MAX_ERRORS] * list)
         }
         try
         {
-            Read(&t, 256);
+            serial->waitForReadyRead(30)
+            QByteArray responseData = serial->readAll();
+            t = QString(responseData);
         }
         catch(...)
         {
@@ -177,7 +224,7 @@ int AbortAll()
 {
     try
     {
-        Write("kill.all",...);
+        serial->write("kill.all".toLocal8Bit());
     }
     catch
     {
@@ -193,7 +240,7 @@ int PrintOnScreen(QString message)
     tmp.append("\n");
     try
     {
-        Write(tmp,...);
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -208,7 +255,7 @@ int Derivative(QString name)
     tmp.append(".d/dt = on \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch
     {
@@ -223,7 +270,7 @@ int Value(QString name)
     tmp.append(".d/dt = off \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch
     {
@@ -238,7 +285,7 @@ int Dither(QString name)
     tmp.append(".Dither = on \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch
     {
@@ -253,7 +300,7 @@ int NotDither(QString name)
     tmp.append(".Dither = off \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch
     {
@@ -269,7 +316,7 @@ int Lopass(QString name, char[6] mode)
     tmp.append(mode);
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -284,7 +331,7 @@ int IncreaseLopass(QString name)
     tmp.append(".Lopass += 1 \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -299,7 +346,7 @@ int DecreaseLopass(QString name)
     tmp.append(".Lopass += -1 \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -316,7 +363,7 @@ int LowLimit(QString name, float value)
     tmp.append("\n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -333,7 +380,7 @@ int LowLimit(QString name, float value)
     tmp.append("\n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -351,7 +398,7 @@ int GetAverage(QString name, int points)
     tmp.append("\n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -361,7 +408,7 @@ int GetAverage(QString name, int points)
     tmp.append(".Average \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -379,7 +426,7 @@ int GetStdDeviation(QString name, int points)
     tmp.append("\n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -389,7 +436,7 @@ int GetStdDeviation(QString name, int points)
     tmp.append(".SD \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -404,7 +451,7 @@ int Stats(QString name)
     tmp.append(".Stats = on \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {
@@ -419,7 +466,7 @@ int Stats(QString name)
     tmp.append(".Stats = off \n");
     try
     {
-        Write(tmp, ...)
+        serial->write(tmp.toLocal8Bit());
     }
     catch(...)
     {

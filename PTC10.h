@@ -35,7 +35,7 @@
 class PTC10
 {
 public:
-        PTC10::PTC10();   //конструктор-деструктор
+        PTC10::PTC10(QString BaudRate, QString PortName);   //конструктор-деструктор
         int GetValue(QString name, QString * buffer);
         int SetValue(Qstring name, float value);
 
