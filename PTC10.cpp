@@ -1,7 +1,7 @@
 //#include "stdafx.h"
 #include "PTC10.h"
 
-PTC10::PTC10(QString BaudRate, QString PortName)
+PTC10::PTC10(int BaudRate, QString PortName)
 {
         nchannels_used = 0;
         serial = new QSerialPort();
@@ -11,35 +11,35 @@ PTC10::PTC10(QString BaudRate, QString PortName)
         serial->setPortName(PortName);
 
         switch(BaudRate){
-        case "600":
+        case 600:
             serial->setBaudRate(600);
             break;
-        case "1200":
+        case 1200:
             serial->setBaudRate(1200);
             break;
-        case "2400":
+        case 2400:
             serial->setBaudRate(2400);
             break;
-        case "4800":
+        case 4800:
             serial->setBaudRate(4800);
             break;
-        case "9600":
+        case 9600:
             serial->setBaudRate(9600);
             break;
-        case "19200":
+        case 19200:
             serial->setBaudRate(19200);
             break;
-        case "38400":
+        case 38400:
             serial->setBaudRate(38400);
             break;
-        case "57600":
+        case 57600:
             serial->setBaudRate(57600);
             break;
-        case "115200":
+        case 115200:
             serial->setBaudRate(115200);
             break;
         default:
-            return 2;
+            emit response("Wrong Baudrate");
         }
 
         connect(&serial, SIGNAL(response(QString)),this, SLOT(get_response(QString)));
@@ -107,7 +107,7 @@ int PTC10::GetDeviceID(QString & buffer)
     }
 }
 
-int PTC10::GetChannelsNames(QString & names[MAX_CHANNELS])
+int PTC10::GetChannelsNames(QString names[MAX_CHANNELS])
 {
         char [MAX_SYMBOLS] b0;
         int nres = GetValue("getOutputNames",b0);
@@ -119,6 +119,7 @@ int PTC10::GetChannelsNames(QString & names[MAX_CHANNELS])
             while(b0[j]!=",")
                 names[i].append(b0[j]);
             i++;
+            j++;
 	}
         nchannels_used = i;
 	return 0;
@@ -129,7 +130,7 @@ int ChangeChannelName(const QString & name, const QString & newname)
         Qstring tmp = name;
         tmp.append(".Name ");
         tmp.append(newname);
-        tmp.append("\n")
+        tmp.append("\n");
         try
         {
                 serial->write(tmp.toLocal8Bit());
@@ -225,9 +226,8 @@ int GetErrors(QString * list)
             return -1;
         }
         *(list+i) = t.remove("\n");
-        return 0;
     }
-
+    return 0;
 }
 
 int AbortAll()
@@ -282,7 +282,7 @@ int Derivative(const QString & name)
     {
         serial->write(tmp.toLocal8Bit());
     }
-    catch
+    catch(...)
     {
         return 1;
     }
@@ -297,7 +297,7 @@ int Value(const QString & name)
     {
         serial->write(tmp.toLocal8Bit());
     }
-    catch
+    catch(...)
     {
         return 1;
     }
@@ -312,7 +312,7 @@ int Dither(const QString & name)
     {
         serial->write(tmp.toLocal8Bit());
     }
-    catch
+    catch(...)
     {
         return 1;
     }
@@ -327,7 +327,7 @@ int NotDither(const QString & name)
     {
         serial->write(tmp.toLocal8Bit());
     }
-    catch
+    catch(...)
     {
         return 1;
     }
@@ -336,7 +336,7 @@ int NotDither(const QString & name)
 
 int Lopass(const QString & name, QString mode)
 {
-    QString tmp;
+    QString tmp = name;
     tmp.append(".Lopass = ");
     tmp.append(mode);
     try
@@ -401,7 +401,7 @@ int HighLimit(const QString & name, float value)
 {
     QString tmp = name;
     tmp.append(".Hi lmt =");
-    tmp.append(floattoQstring(value));
+    tmp.append(QString::number(value));
     tmp.append("\n");
     try
     {
@@ -419,7 +419,7 @@ int GetAverage(const QString & name, int points)
     if(Stats(name) == 1) return 3;
     QString tmp = name;
     tmp.append(".Points = ");
-    tmp.append(IntToQString(points));
+    tmp.append(QString::number(points));
     tmp.append("\n");
     try
     {
@@ -447,7 +447,7 @@ int GetStdDeviation(const QString & name, int points)
     if(Stats(name) == 1) return 3;
     QString tmp = name;
     tmp.append(".Points = ");
-    tmp.append(IntToQString(points));
+    tmp.append(QString::number(points));
     tmp.append("\n");
     try
     {
@@ -624,4 +624,9 @@ int PIDSetRamp(const QString & name, float value)
         return 1;
     }
     return 0;
+}
+
+void MainWindow::getResponse(const QString &s)
+{
+    ui->lineEditResponse->setText(s);
 }

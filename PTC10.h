@@ -1,5 +1,7 @@
 //#pragma once
 #include <QString>
+#include <QtSerialPort/QSerialPort>
+#include <QTime>
 
 //#define MAX_CHANNELS	30
 #define MAX_T_USED		8
@@ -38,11 +40,11 @@ class PTC10
 {
 public:
         int nchannels_used;
-        PTC10(QString BaudRate, QString PortName);   //конструктор-деструктор
+        PTC10(int BaudRate, QString PortName);   //конструктор-деструктор
         int GetValue(const QString &name, char * buffer);
         int SetValue(const Qstring &name, float value);
 
-        int GetChannelsNames(QString & names[MAX_CHANNELS]);
+        int GetChannelsNames(QString names[MAX_CHANNELS]);
         int ChangeChannelName(const QString & name, const QString & newname);
 
         int GetDeviceID(Qstring & buffer);
@@ -89,6 +91,12 @@ public:
         int PIDInput(const QString & output_name, const QString & input_name);
         int PIDRampRate(const QString & name, float value); //value=0 - ASAP
         //int PIDAutoTune(QString name, float lag, float step, int mode, int type);
+
+        private slots:
+        void getResponse(const QString &s);
+
+        signals:
+        void response(const QString &s) const;
 
 };
  // also: <ch>Plot, <ch>cal!!, <ch>alarm !!!
