@@ -4,6 +4,8 @@
 //#define MAX_CHANNELS	30
 #define MAX_T_USED		8
 #define MAX_ERRORS    20
+#define MAX_SYMBOLS 256
+#define MAX_CHANNELS 30
 
 #define LOPASS_OFF "Off  \n"
 #define LOPASS_1s "1 s  \n"
@@ -35,59 +37,58 @@
 class PTC10
 {
 public:
-        PTC10::PTC10(QString BaudRate, QString PortName);   //конструктор-деструктор
-        int GetValue(QString name, QString * buffer);
-        int SetValue(Qstring name, float value);
-
-        int GetChannelsNames(QString * names[MAX_CHANNELS]);
-        int ChangeChannelName(Qstring name, QString newname);
-
-        //int GetValues(Ar1<double> *);		//array of values with indici channels_used is returned // wtf??
-
         int nchannels_used;
+        PTC10(QString BaudRate, QString PortName);   //конструктор-деструктор
+        int GetValue(const QString &name, char * buffer);
+        int SetValue(const Qstring &name, float value);
 
-        int GetDeviceID(Qstring * buffer);
+        int GetChannelsNames(QString & names[MAX_CHANNELS]);
+        int ChangeChannelName(const QString & name, const QString & newname);
 
-        int GetSpecialLog(QString name, int mode, QString time); //heavy artillery, not to be used probably //I'll think about "mode" later
-        int GetLog(QString name); // returns all data from log about ch 'name'
+        int GetDeviceID(Qstring & buffer);
 
-        int SensorType(QString name, int mode); //<ch>Units
-        int SetCurrent(QString name, float value, int mode);
+        //int GetSpecialLog(QString name, int mode, QString time); //heavy artillery, not to be used probably //I'll think about "mode" later
+        //int GetLog(QString name); // returns all data from log about ch 'name'
+
+        //int SensorType(const QString & name, int mode); //<ch>Units
+        //int SetCurrent(const QString & name, float value, int mode);
 
         int DisableOutputs();        //i mean, ALL outputs
         int EnableOutputs();
 
-        int GetTime(); //int?
+        int GetTime();
 
-        int GetErrors(QString[MAX_ERRORS] * list);
+        int HardReset();
+        int GetErrors(QString * list); //Achtung
         int AbortAll();         //kill.all - aborts all running macros
-        int PrintOnScreen(QString message);
+        int PrintOnScreen(const QString & message);
 
-        int Derivative(QString name); //Instead of Power, Temperature, etc. I/O sends its derivative
-        int Value(QString name); //vice versa
+        int Derivative(const QString & name); //Instead of Power, Temperature, etc. I/O sends its derivative
+        int Value(const QString & name); //vice versa
 
-        int Dither(QString name); // PTC430 DC
-        int NotDither(QString name);
+        int Dither(const QString & name); // PTC430 DC
+        int NotDither(const QString & name);
 
-        int Lopass(QString name, char[6] mode);            //sets RC-filter time for inputs
-        int IncreaseLopass(QString name);
-        int DecreaseLopass(QString name);
+        int Lopass(const QString & name, QString mode);            //sets RC-filter time for inputs
+        int IncreaseLopass(const QString & name);
+        int DecreaseLopass(const QString & name);
 
-        int LowLimit(QString name, float value);
-        int HighLimit(QString name, float value);
+        int LowLimit(const QString & name, float value);
+        int HighLimit(const QString & name, float value);
 
-        int GetAverage(QString name, int points);   //Prints Average on Screen??
-        int GetStdDeviation(QString name, int points);  //Prints Std Deviation on Screen??
-        int Stats(QString name); //Starts Gathering Stats
-        int NoStats(QString name);
+        int GetAverage(const QString & name, int points);   //Prints Average /on Screen??
+        int GetStdDeviation(const QString & name, int points);  //Prints Std Deviation /on Screen??
+        int Stats(const QString & name); //Starts Gathering Stats
+        int NoStats(const QString & name);
 
-        int PIDSetRamp(QString name, float value);
-        int PIDSetP(QString name, float value);
-        int PIDSetI(QString name, float value);
-        int PIDSetD(QString name, float value);
-        int PIDMode(QString name, int mode);
-        int PIDRampRate(QString name, float value); //value=0 - ASAP
-        int PIDAutoTune(QString name, float lag, float step, int mode, int type);
+        int PIDSetRamp(const QString & name, float value);
+        int PIDSetP(const QString & name, float value);
+        int PIDSetI(const QString & name, float value);
+        int PIDSetD(const QString & name, float value);
+        int PIDMode(const QString & name, int mode);
+        int PIDInput(const QString & output_name, const QString & input_name);
+        int PIDRampRate(const QString & name, float value); //value=0 - ASAP
+        //int PIDAutoTune(QString name, float lag, float step, int mode, int type);
 
 };
  // also: <ch>Plot, <ch>cal!!, <ch>alarm !!!

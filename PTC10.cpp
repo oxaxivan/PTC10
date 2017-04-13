@@ -47,12 +47,11 @@ PTC10::PTC10(QString BaudRate, QString PortName)
             return 1;
 }
 
-int PTC10::GetValue(QString name, QString * buffer)
+int PTC10::GetValue(const QString &name, char * buffer)
 {
         Qstring tmp = name;
         tmp.append("? \n");
-        bool b;
-        int nread;
+        //int nread;
 	try
 	{
                 serial->write(tmp.toLocal8Bit());
@@ -65,22 +64,21 @@ int PTC10::GetValue(QString name, QString * buffer)
 	try
 	{
             serial->waitForReadyRead(30)
-            QByteArray responseData = serial->readAll();
-            tmp = QString(responseData);
+            *buffer = serial->readAll();
 	}
 	catch(...)
 	{
-                buffer = 0;
+                *buffer = 0;
 		return 2;
 	}
-	if(nread == 0)
-		return 2;
+        /*if(nread == 0)
+                return 2;*/
         tmp.truncate(tmp.lastIndexOf("\n"));
         *buffer = tmp;
 	return 0;
 }
 
-int PTC10::SetValue(QString name, float value)
+int PTC10::SetValue(const QString & name, float value)
 {
         QString tmp = name;
         tmp.append(" = ");
@@ -97,30 +95,36 @@ int PTC10::SetValue(QString name, float value)
 	return 0;
 }
 
-int PTC10::GetDeviceID(QString * buffer)
+int PTC10::GetDeviceID(QString & buffer)
 {
-	return GetValue("*IDN",buffer);
+    char t[MAX_SYMBOLS];
+    int j = 0;
+    return GetValue("*IDN",t);
+    while(t[j]!="\n")
+    {
+        buffer.append(t[j]);
+        j++;
+    }
 }
 
-int PTC10::GetChannelsNames(QString * names[MAX_CHANNELS])
+int PTC10::GetChannelsNames(QString & names[MAX_CHANNELS])
 {
-        QString b0;
+        char [MAX_SYMBOLS] b0;
         int nres = GetValue("getOutputNames",b0);
 	if(nres)
 		return nres;
-        int i = 0, n = 0;
-        while((i < MAX_CHANNELS)&&)
+        int i = 0, j=0;
+        while(b0[j]!="\n")
 	{
-            n = b0.indexOf("i");
-            names[i] = b0.left(n);
-            b0.remove(0,n);
+            while(b0[j]!=",")
+                names[i].append(b0[j]);
             i++;
 	}
         nchannels_used = i;
 	return 0;
 }
 	
-int ChangeChannelName(Qstring name, QString newname)
+int ChangeChannelName(const QString & name, const QString & newname)
 {
         Qstring tmp = name;
         tmp.append(".Name ");
@@ -139,16 +143,21 @@ int ChangeChannelName(Qstring name, QString newname)
 
 int DisableOutputs()
 {
-    QString tmp = "outputEnable = off \n"
+    QString tmp = "outputEnable = off \n";
     try
     {
         serial->write(tmp.toLocal8Bit());
     }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
 }
 
 int EnableOutputs()
 {
-    QString tmp = "outputEnable = on \n"
+    QString tmp = "outputEnable = on \n";
     try
     {
         serial->write(tmp.toLocal8Bit());
@@ -175,30 +184,31 @@ int GetTime()
         }
         try
         {
-            serial->waitForReadyRead(30)
+            serial->waitForReadyRead(30);
             QByteArray responseData = serial->readAll();
-            tmp = responseData.toInt
+            tmp = QString(responseData);
         }
         catch(...)
         {
             return -2;
         }
-        if((tmp == 0)&&(t == 0)) return -2;
+        if(tmp == 0) return -2;
         tmp.remove("\n");
         t = tmp.toInt(&ok,10);
         if(ok == false) return -2;
         return t;
 }
 
-int GetErrors(QString[MAX_ERRORS] * list)
+int GetErrors(QString * list)
 {
     QString t;
+    QString tt = "geterror";
     int i;
     while (t != "no errors")
     {
         try
         {
-            serial->write("geterror".toLocal8Bit());
+            serial->write(tt.toLocal8Bit());
         }
         catch(...)
         {
@@ -206,7 +216,7 @@ int GetErrors(QString[MAX_ERRORS] * list)
         }
         try
         {
-            serial->waitForReadyRead(30)
+            serial->waitForReadyRead(30);
             QByteArray responseData = serial->readAll();
             t = QString(responseData);
         }
@@ -214,7 +224,7 @@ int GetErrors(QString[MAX_ERRORS] * list)
         {
             return -1;
         }
-        *list[i] = t.remove("\n");
+        *(list+i) = t.remove("\n");
         return 0;
     }
 
@@ -222,18 +232,33 @@ int GetErrors(QString[MAX_ERRORS] * list)
 
 int AbortAll()
 {
+    QString tmp = "kill.all";
     try
     {
-        serial->write("kill.all".toLocal8Bit());
+        serial->write(tmp.toLocal8Bit());
     }
-    catch
+    catch(...)
     {
         return 1;
     }
     return 0;
 }
 
-int PrintOnScreen(QString message)
+int HardReset()
+{
+    QString tmp = "*RST\n";
+    try
+    {
+        serial->write(tmp.toLocal8Bit)
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PrintOnScreen(const QString & message)
 {
     QString tmp = "print ";
     tmp.append(message);
@@ -249,7 +274,7 @@ int PrintOnScreen(QString message)
     return 0;
 }
 
-int Derivative(QString name)
+int Derivative(const QString & name)
 {
     QString tmp = name;
     tmp.append(".d/dt = on \n");
@@ -264,7 +289,7 @@ int Derivative(QString name)
     return 0;
 }
 
-int Value(QString name)
+int Value(const QString & name)
 {
     QString tmp = name;
     tmp.append(".d/dt = off \n");
@@ -279,7 +304,7 @@ int Value(QString name)
     return 0;
 }
 
-int Dither(QString name)
+int Dither(const QString & name)
 {
     QString tmp = name;
     tmp.append(".Dither = on \n");
@@ -294,7 +319,7 @@ int Dither(QString name)
     return 0;
 }
 
-int NotDither(QString name)
+int NotDither(const QString & name)
 {
     QString tmp = name;
     tmp.append(".Dither = off \n");
@@ -309,7 +334,7 @@ int NotDither(QString name)
     return 0;
 }
 
-int Lopass(QString name, char[6] mode)
+int Lopass(const QString & name, QString mode)
 {
     QString tmp;
     tmp.append(".Lopass = ");
@@ -325,7 +350,7 @@ int Lopass(QString name, char[6] mode)
     return 0;
 }
 
-int IncreaseLopass(QString name)
+int IncreaseLopass(const QString & name)
 {
     QString tmp = name;
     tmp.append(".Lopass += 1 \n");
@@ -340,7 +365,7 @@ int IncreaseLopass(QString name)
     return 0;
 }
 
-int DecreaseLopass(QString name)
+int DecreaseLopass(const QString & name)
 {
     QString tmp = name;
     tmp.append(".Lopass += -1 \n");
@@ -355,7 +380,7 @@ int DecreaseLopass(QString name)
     return 0;
 }
 
-int LowLimit(QString name, float value)
+int LowLimit(const QString & name, float value)
 {
     QString tmp = name;
     tmp.append(".Low lmt =");
@@ -372,7 +397,7 @@ int LowLimit(QString name, float value)
     return 0;
 }
 
-int LowLimit(QString name, float value)
+int HighLimit(const QString & name, float value)
 {
     QString tmp = name;
     tmp.append(".Hi lmt =");
@@ -389,7 +414,7 @@ int LowLimit(QString name, float value)
     return 0;
 }
 
-int GetAverage(QString name, int points)
+int GetAverage(const QString & name, int points)
 {
     if(Stats(name) == 1) return 3;
     QString tmp = name;
@@ -417,7 +442,7 @@ int GetAverage(QString name, int points)
     return 0;
 }
 
-int GetStdDeviation(QString name, int points)
+int GetStdDeviation(const QString & name, int points)
 {
     if(Stats(name) == 1) return 3;
     QString tmp = name;
@@ -445,7 +470,7 @@ int GetStdDeviation(QString name, int points)
     return 0;
 }
 
-int Stats(QString name)
+int Stats(const QString & name)
 {
     QString tmp = name;
     tmp.append(".Stats = on \n");
@@ -460,10 +485,136 @@ int Stats(QString name)
     return 0;
 }
 
-int Stats(QString name)
+int NoStats(const QString & name)
 {
     QString tmp = name;
     tmp.append(".Stats = off \n");
+    try
+    {
+        serial->write(tmp.toLocal8Bit());
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PIDSetP(const QString & name, float value)
+{
+    QString tmp = name;
+    tmp.append("PID.P = ");
+    tmp.append(QString::number(value));
+    try
+    {
+        serial->write(tmp.toLocal8Bit());
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PIDSetI(const QString & name, float value)
+{
+    QString tmp = name;
+    tmp.append("PID.I = ");
+    tmp.append(QString::number(value));
+    try
+    {
+        serial->write(tmp.toLocal8Bit());
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PIDSetD(const QString & name, float value)
+{
+    QString tmp = name;
+    tmp.append("PID.D = ");
+    tmp.append(QString::number(value));
+    try
+    {
+        serial->write(tmp.toLocal8Bit());
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PIDMode(const QString & name, int mode)
+{
+    QString tmp = name;
+    tmp.append(".PID.Mode = ");
+    switch (mode) {
+    case PID_MODE_ON:
+        tmp.append("On");
+        break;
+    case PID_MODE_OFF:
+        tmp.append("Off");
+        break;
+    case PID_MODE_FOLLOW:
+        tmp.append("Follow");
+        break;
+    default:
+        return 2;
+        break;
+    }
+    try
+    {
+        serial->write(tmp.toLocal8Bit());
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+
+}
+
+int PIDInput(const QString & output_name, const QString & input_name)
+{
+    QString tmp = output_name;
+    tmp.append(".Pid.Input =");
+    tmp.append(input_name);
+    try
+    {
+        serial->write(tmp.toLocal8Bit());
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PIDSetRamp(const QString & name, float value)
+{
+    QString tmp = name;
+    tmp.append(".PID.PampT = ");
+    tmp.append(QString::number(value));
+    try
+    {
+        serial->write(tmp.toLocal8Bit());
+    }
+    catch(...)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int PIDSetRamp(const QString & name, float value)
+{
+    QString tmp = name;
+    tmp.append(".PID.Pamp = ");
+    tmp.append(QString::number(value));
     try
     {
         serial->write(tmp.toLocal8Bit());
