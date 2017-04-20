@@ -40,14 +40,16 @@ class PTC10
 {
 public:
         int nchannels_used;
-        PTC10(int BaudRate, QString PortName);   //конструктор-деструктор
-        int GetValue(const QString &name, char * buffer);
-        int SetValue(const Qstring &name, float value);
+        PTC10(int BaudRate, QString PortName);   //конструктор. вызывается сразу
+        int GetValue(const QString &name, char * buffer);  //не нужна
+        int SetValue(const Qstring &name, float value);  //задает мощность (или еще что-то). в 1 очередь
 
-        int GetChannelsNames(QString names[MAX_CHANNELS]);
-        int ChangeChannelName(const QString & name, const QString & newname);
+        int GetChannelValue(const QString & name);  //спрашивает температуру (или еще что-то). в 1 очередь
 
-        int GetDeviceID(Qstring & buffer);
+        int GetChannelsNames(QString names[MAX_CHANNELS]);  //записывает имена каналов в names
+        int ChangeChannelName(const QString & name, const QString & newname);  //не нужна
+
+        int GetDeviceID(Qstring & buffer);  //не нужна
 
         //int GetSpecialLog(QString name, int mode, QString time); //heavy artillery, not to be used probably //I'll think about "mode" later
         //int GetLog(QString name); // returns all data from log about ch 'name'
@@ -55,35 +57,35 @@ public:
         //int SensorType(const QString & name, int mode); //<ch>Units
         //int SetCurrent(const QString & name, float value, int mode);
 
-        int DisableOutputs();        //i mean, ALL outputs
-        int EnableOutputs();
+        int DisableOutputs();        //i mean, ALL outputs //пока не нужна, но иметь в виду
+        int EnableOutputs();    //пока не нужна
 
-        int GetTime();
+        int GetTime();  //пока не нужна
 
-        int HardReset();
-        int GetErrors(QString * list); //Achtung
-        int AbortAll();         //kill.all - aborts all running macros
-        int PrintOnScreen(const QString & message);
+        int HardReset();    //пока не нужна
+        int GetErrors(QString * list);  //пригодится при отладке
+        int AbortAll();         //kill.all - aborts all running macros //пока не нужна
+        int PrintOnScreen(const QString & message); //не нужна
 
-        int Derivative(const QString & name); //Instead of Power, Temperature, etc. I/O sends its derivative
-        int Value(const QString & name); //vice versa
+        int Derivative(const QString & name); //Instead of Power, Temperature, etc. I/O sends its derivative //в 2 очередь
+        int Value(const QString & name); //vice versa  //в 2 очередь
 
-        int Dither(const QString & name); // PTC430 DC
-        int NotDither(const QString & name);
+        int Dither(const QString & name); // PTC430 DC  //хз
+        int NotDither(const QString & name);    //хз
 
-        int Lopass(const QString & name, QString mode);            //sets RC-filter time for inputs
-        int IncreaseLopass(const QString & name);
-        int DecreaseLopass(const QString & name);
+        int Lopass(const QString & name, QString mode);            //sets RC-filter time for inputs //не нужна
+        int IncreaseLopass(const QString & name);   //не нужна
+        int DecreaseLopass(const QString & name);   //не нужна
 
-        int LowLimit(const QString & name, float value);
-        int HighLimit(const QString & name, float value);
+        int LowLimit(const QString & name, float value);    //скорее всего, не нужна
+        int HighLimit(const QString & name, float value);   //скорее всего, не нужна
 
         int GetAverage(const QString & name, int points);   //Prints Average /on Screen??
         int GetStdDeviation(const QString & name, int points);  //Prints Std Deviation /on Screen??
         int Stats(const QString & name); //Starts Gathering Stats
         int NoStats(const QString & name);
 
-        int PIDSetRamp(const QString & name, float value);
+        int PIDSetRamp(const QString & name, float value);  //весь PID - в 2 очередь
         int PIDSetP(const QString & name, float value);
         int PIDSetI(const QString & name, float value);
         int PIDSetD(const QString & name, float value);

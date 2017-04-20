@@ -9,6 +9,7 @@ PTC10::PTC10(int BaudRate, QString PortName)
         serial->setStopBits(QSerialPort::OneStop);
         serial->setDataBits(QSerialPort::Data8);
         serial->setPortName(PortName);
+        serial->setFlowControl(QSerialPort::NoFlowControl);
 
         switch(BaudRate){
         case 600:
@@ -81,7 +82,7 @@ int PTC10::GetValue(const QString &name, char * buffer)
 int PTC10::SetValue(const QString & name, float value)
 {
         QString tmp = name;
-        tmp.append(" = ");
+        tmp.append(".value = ");
         tmp.append(QString::number(value));
         tmp.append("\n");
 	try
@@ -93,6 +94,16 @@ int PTC10::SetValue(const QString & name, float value)
 		return 1;
 	};
 	return 0;
+}
+
+int GetChannelValue(const QString & name)
+{
+    QString tmp = name;
+    tmp.append(".value?");
+    char value[10];  //= "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"
+    if(GetValue(tmp,value))
+        return 1;
+    return atof(value);
 }
 
 int PTC10::GetDeviceID(QString & buffer)
