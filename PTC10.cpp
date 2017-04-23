@@ -9,7 +9,7 @@ PTC10::PTC10(int BaudRate, QString PortName)
         serial->setStopBits(QSerialPort::OneStop);
         serial->setDataBits(QSerialPort::Data8);
         serial->setPortName(PortName);
-        serial->setFlowControl(QSerialPort::NoFlowControl);
+        serial->setFlowControl(QSerialPort::HardwareControl);
 
         switch(BaudRate){
         case 600:
@@ -395,7 +395,7 @@ int LowLimit(const QString & name, float value)
 {
     QString tmp = name;
     tmp.append(".Low lmt =");
-    tmp.append(floattoQstring(value));
+    tmp.append(Qstring::number(value));
     tmp.append("\n");
     try
     {
